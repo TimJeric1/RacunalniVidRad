@@ -2,13 +2,13 @@
 __pycache__/
 
 # Ignore all .json files
-*.json
+#*.json
 
 # Ignore all .h5 files
 *.h5
 
 # Ignore all .pth files
-*.pth
+#*.pth
 
 # Ignore all .npz files
 *.npz

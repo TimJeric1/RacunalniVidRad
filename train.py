@@ -1,3 +1,4 @@
+import sys
 import json
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -5,7 +6,7 @@ from torch.optim import Adam
 from torch.nn import CrossEntropyLoss
 from sklearn.metrics import precision_score, recall_score, f1_score
 import numpy as np
-from model import SimpleCNN
+from model import SimpleCNN_v1, SimpleCNN_v2, SimpleCNN_v3
 
 # Function for training and validation with early stopping
 def train_and_validate(train_loader, val_loader, model, criterion, optimizer, patience=5):
@@ -119,8 +120,18 @@ def train_and_validate(train_loader, val_loader, model, criterion, optimizer, pa
 
 # Main script
 if __name__ == "__main__":
+    model_version = input("""
+    Which model do you want to train?
+    all: 0
+    v1:  1
+    v2:  2
+    v3:  3
+""")
+
+    if model_version not in ["0", "1", "2", "3"]:
+        sys.exit()
+
     # Load dataset (Assume `load_data` properly loads and preprocesses the data)
-    # file_path = "input_data.npz"
     file_path = "/home/timjeric/Downloads/racvid/RacunalniVid_Rad/input_data.npz"
     data = np.load(file_path)  # Use this if loading from a .pth or change to your data
     X_train_tensor = torch.tensor(data['X_train'], dtype=torch.float32).permute(0, 3, 1, 2)
@@ -134,17 +145,37 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
-    # Model, criterion, and optimizer
-    model = SimpleCNN().cuda()  # Use GPU if available
-    criterion = CrossEntropyLoss()
-    optimizer = Adam(model.parameters(), lr=0.001)
+    # Models to train
+    models = {
+        '1': SimpleCNN_v1().cuda(),
+        '2': SimpleCNN_v2().cuda(),
+        '3': SimpleCNN_v3().cuda()
+    }
 
-    # Train the model and get the history with early stopping
-    history = train_and_validate(train_loader, val_loader, model, criterion, optimizer, patience=5)
+    # Train the selected model(s)
+    if model_version == '0':  # If the user chooses "all"
+        for model_key, model in models.items():
+            print(f"Training Model v{model_key}...")
+            criterion = CrossEntropyLoss()
+            optimizer = Adam(model.parameters(), lr=0.001)
 
-    # Save history to a JSON file
-    with open("training_history.json", "w") as f:
-        json.dump(history, f)
+            history = train_and_validate(train_loader, val_loader, model, criterion, optimizer, patience=3)
 
-    # Save the model
-    torch.save(model.state_dict(), "simple_cnn.pth")
+            # Save history to a JSON file
+            with open(f"training_history_model_v{model_key}.json", "w") as f:
+                json.dump(history, f)
+            # Save the model
+            torch.save(model.state_dict(), f"simple_cnn_v{model_key}.pth")
+    else:  # Train the selected single model
+        model = models[model_version]
+        print(f"Training Model v{model_version}...")
+        criterion = CrossEntropyLoss()
+        optimizer = Adam(model.parameters(), lr=0.001)
+
+        history = train_and_validate(train_loader, val_loader, model, criterion, optimizer, patience=3)
+
+        # Save history to a JSON file
+        with open(f"training_history_model_v{model_version}.json", "w") as f:
+            json.dump(history, f)
+        # Save the model
+        torch.save(model.state_dict(), f"simple_cnn_v{model_version}.pth")
