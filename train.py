@@ -121,7 +121,7 @@ def train_and_validate(train_loader, val_loader, model, criterion, optimizer, pa
 if __name__ == "__main__":
     # Load dataset (Assume `load_data` properly loads and preprocesses the data)
     # file_path = "input_data.npz"
-    file_path = "/home/timjeric/Downloads/racvid/RacunalniVid_Rad/DrugiDataset/input_data.npz"
+    file_path = "/home/timjeric/Downloads/racvid/RacunalniVid_Rad/input_data.npz"
     data = np.load(file_path)  # Use this if loading from a .pth or change to your data
     X_train_tensor = torch.tensor(data['X_train'], dtype=torch.float32).permute(0, 3, 1, 2)
     Y_train_tensor = torch.tensor(data['Y_train'], dtype=torch.long)

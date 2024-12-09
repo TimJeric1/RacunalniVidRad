@@ -62,7 +62,8 @@ def load_and_analyze_data(file_path):
 # Main script
 if __name__ == "__main__":
     # Path to the dataset
-    file_path = "/home/timjeric/Downloads/racvid/RacunalniVid_Rad/DrugiDataset/input_data.npz"  # Update path if necessary
+    # file_path = "input_data.npz"
+    file_path = "/home/timjeric/Downloads/racvid/RacunalniVid_Rad/input_data.npz"  # Update path if necessary
     
     # Load and analyze the data
     load_and_analyze_data(file_path)
