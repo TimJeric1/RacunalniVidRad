@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
-from model import SimpleCNN_v1, SimpleCNN_v2, SimpleCNN_v3
+from model import SimpleCNN_v1, SimpleCNN_v2, SimpleCNN_v3, SimpleCNN_v4  # Added import for SimpleCNN_v4
 import random
 
 
@@ -49,7 +49,7 @@ def plot_test_metrics(models, X_test, Y_test, labels_map):
     # Plot the metrics
     metrics = ['Accuracy', 'Precision', 'Recall', 'F1 Score']
     values = [accuracies, precisions, recalls, f1_scores]
-    colors = ['b', 'g', 'r']
+    colors = ['b', 'g', 'r', 'c']  # Added color for 4 models
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
@@ -206,9 +206,10 @@ if __name__ == "__main__":
     v1:  1
     v2:  2
     v3:  3
+    v4:  4  # Option for model v4 added
     """)
 
-    if model_version not in ["0", "1", "2", "3"]:
+    if model_version not in ["0", "1", "2", "3", "4"]:  # Added v4 option
         sys.exit()
 
     # Load validation and test data
@@ -223,7 +224,8 @@ if __name__ == "__main__":
     models = {
         '1': SimpleCNN_v1().cuda(),
         '2': SimpleCNN_v2().cuda(),
-        '3': SimpleCNN_v3().cuda()
+        '3': SimpleCNN_v3().cuda(),
+        '4': SimpleCNN_v4().cuda()  # Added model v4
     }
 
     if model_version == '0':
@@ -231,6 +233,7 @@ if __name__ == "__main__":
             "training_history_model_v1.json",
             "training_history_model_v2.json",
             "training_history_model_v3.json",
+            "training_history_model_v4.json",  # Added history file for model v4
         ]
         for version, model in models.items():
             model.load_state_dict(torch.load(f"simple_cnn_v{version}.pth"))

@@ -6,7 +6,7 @@ from torch.optim import Adam
 from torch.nn import CrossEntropyLoss
 from sklearn.metrics import precision_score, recall_score, f1_score
 import numpy as np
-from model import SimpleCNN_v1, SimpleCNN_v2, SimpleCNN_v3
+from model import SimpleCNN_v1, SimpleCNN_v2, SimpleCNN_v3, SimpleCNN_v4  # Import the new model v4
 
 def train_and_validate(train_loader, val_loader, model, criterion, optimizer, patience=5):
     """
@@ -117,9 +117,10 @@ if __name__ == "__main__":
     v1:  1
     v2:  2
     v3:  3
+    v4:  4  # Add v4 as an option
     """)
 
-    if model_version not in ["0", "1", "2", "3"]:
+    if model_version not in ["0", "1", "2", "3", "4"]:
         sys.exit()
 
     file_path = "updated_data.npz"
@@ -137,7 +138,8 @@ if __name__ == "__main__":
     models = {
         '1': SimpleCNN_v1().cuda(),
         '2': SimpleCNN_v2().cuda(),
-        '3': SimpleCNN_v3().cuda()
+        '3': SimpleCNN_v3().cuda(),
+        '4': SimpleCNN_v4().cuda()  # Add v4 model
     }
 
     if model_version == '0':
