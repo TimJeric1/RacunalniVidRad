@@ -79,6 +79,8 @@ def analyze_data(X_train, Y_train, X_test, Y_test, X_validation, Y_validation):
     print(f"Shape of X_train: {X_train.shape}")
     print(f"Shape of X_validation: {X_validation.shape}")
     print(f"Shape of X_test: {X_test.shape}")
+    print(f"Shape of Y_train: {Y_train.shape}")
+    print(f"Shape of Y_test: {Y_test.shape}")
 
     # Analyze class distributions
     train_class_counts = {class_id: np.sum(Y_train == class_id) for class_id in np.unique(Y_train)}

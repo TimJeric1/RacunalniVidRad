@@ -32,7 +32,8 @@ def evaluate_on_test_data(model, X_test, Y_test, labels_map):
 
 def plot_test_metrics(models, X_test, Y_test, labels_map):
     """
-    Plot bar graphs for test metrics (Accuracy, Precision, Recall, F1 Score) for each model.
+    Plot bar graphs for test metrics (Accuracy, Precision, Recall, F1 Score) for each model,
+    with the actual values displayed on top of the bars.
     """
     accuracies = []
     precisions = []
@@ -46,23 +47,31 @@ def plot_test_metrics(models, X_test, Y_test, labels_map):
         recalls.append(recall)
         f1_scores.append(f1)
 
-    # Plot the metrics
     metrics = ['Accuracy', 'Precision', 'Recall', 'F1 Score']
     values = [accuracies, precisions, recalls, f1_scores]
-    colors = ['b', 'g', 'r', 'c']  # Added color for 4 models
+    colors = ['b', 'g', 'r', 'c']  
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
     for i, metric in enumerate(metrics):
-        axes[i // 2, i % 2].bar(models.keys(), values[i], color=colors[:len(models)])
-        axes[i // 2, i % 2].set_title(f"{metric} of Test Data")
-        axes[i // 2, i % 2].set_ylabel(metric)
-        axes[i // 2, i % 2].set_xlabel("Model Version")
-        axes[i // 2, i % 2].set_ylim(0, 1)
+        ax = axes[i // 2, i % 2]
+        bars = ax.bar(models.keys(), values[i], color=colors[:len(models)])
+        ax.set_title(f"{metric} of Test Data")
+        ax.set_ylabel(metric)
+        ax.set_xlabel("Model Version")
+        ax.set_ylim(0, 1)
+        
+        
+        for bar in bars:
+            height = bar.get_height()
+            ax.annotate(f'{height:.2f}',  
+                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3),  
+                        textcoords="offset points",
+                        ha='center', va='bottom')
 
     plt.tight_layout()
     plt.show()
-
 
 def plot_history(history_files):
     """
@@ -146,56 +155,46 @@ def plot_history(history_files):
     plt.show()
 
 
+
 def display_predictions(models, X_test, Y_test, labels_map, n_samples=5):
     """
     Displays n_samples randomly selected images from the test set 
     with their true and predicted labels.
-    The same images are predicted by all models, and the model name is displayed in the figure title.
+    The same images are predicted by all models, and the model name is displayed in each subplot.
     Correct predictions are color-coded in green, and incorrect predictions in red.
     """
     model_names = list(models.keys())
-    indices = random.sample(range(len(X_test)), n_samples)  # Randomly select n_samples indices
+    indices = random.sample(range(len(X_test)), n_samples)  
 
-    # Create a figure with enough space for all models' predictions
-    fig, axes = plt.subplots(n_samples, len(models), figsize=(18, 5 * n_samples))
+    fig, axes = plt.subplots(len(models), n_samples, figsize=(5 * n_samples, 4 * len(models)))
 
-    # If there is only one model, axes will be 1D. We need to convert it into 2D.
-    if len(models) == 1:
-        axes = np.expand_dims(axes, axis=1)  # Convert to 2D if only one model
+    if n_samples == 1:
+        axes = np.expand_dims(axes, axis=1)  
 
-    for i, idx in enumerate(indices):
-        img = X_test[idx].permute(1, 2, 0).numpy()
-        true_label = labels_map[Y_test[idx].item()]
+    for j, (model_name, model) in enumerate(models.items()):
+        for i, idx in enumerate(indices):
+            img = X_test[idx].permute(1, 2, 0).numpy()
+            true_label = labels_map[Y_test[idx].item()]
 
-        for j, (model_name, model) in enumerate(models.items()):
             with torch.no_grad():
                 output = model(X_test[idx].unsqueeze(0).cuda())
                 predicted_label = labels_map[torch.argmax(output).item()]
-
-            # Color the text based on prediction correctness
             if predicted_label == true_label:
                 text_color = 'green'
             else:
                 text_color = 'red'
+            axes[j, i].imshow(img)
+            axes[j, i].axis('off')
+            axes[j, i].set_title(
+                f"Model: {model_name}\nTrue: {true_label}\nPred: {predicted_label}",
+                fontsize=10,
+                color=text_color
+            )
 
-            # Display the image in the corresponding subplot
-            axes[i, j].imshow(img)
-            axes[i, j].axis('off')
-            
-            # Add text to the right of the image
-            axes[i, j].text(1.1, 0.5, f"True: {true_label}\nPred: {predicted_label}",
-                            transform=axes[i, j].transAxes, fontsize=12, color=text_color, verticalalignment='center')
+    fig.suptitle(f"Predictions for {n_samples} Test Images Across Models", fontsize=16)
 
-    # Set the figure title with all model names
-    fig.suptitle(f"Predictions on Same {n_samples} Test Images for Models {', '.join(model_names)}", fontsize=16)
-
-    # Add column titles (model names) with more space
-    for j, model_name in enumerate(model_names):
-        axes[0, j].set_title(f"Model {model_name}", fontsize=12, color='black')
-
-    # Adjust layout to prevent overlap and add more space between subplots
-    plt.subplots_adjust(wspace=0.6, hspace=0.6)  # Increased spacing
-    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout within the figure
+    plt.subplots_adjust(wspace=0.2, hspace=0.2)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  
     plt.show()
 
 
@@ -206,13 +205,13 @@ if __name__ == "__main__":
     v1:  1
     v2:  2
     v3:  3
-    v4:  4  # Option for model v4 added
+    v4:  4  
     """)
 
-    if model_version not in ["0", "1", "2", "3", "4"]:  # Added v4 option
+    if model_version not in ["0", "1", "2", "3", "4"]:  
         sys.exit()
 
-    # Load validation and test data
+    
     file_path = "updated_data.npz"
     data = np.load(file_path)
     X_validation = torch.tensor(data['X_validation'], dtype=torch.float32).permute(0, 3, 1, 2)
@@ -225,7 +224,7 @@ if __name__ == "__main__":
         '1': SimpleCNN_v1().cuda(),
         '2': SimpleCNN_v2().cuda(),
         '3': SimpleCNN_v3().cuda(),
-        '4': SimpleCNN_v4().cuda()  # Added model v4
+        '4': SimpleCNN_v4().cuda()  
     }
 
     if model_version == '0':
@@ -233,16 +232,14 @@ if __name__ == "__main__":
             "training_history_model_v1.json",
             "training_history_model_v2.json",
             "training_history_model_v3.json",
-            "training_history_model_v4.json",  # Added history file for model v4
+            "training_history_model_v4.json",  
         ]
         for version, model in models.items():
             model.load_state_dict(torch.load(f"simple_cnn_v{version}.pth"))
             print(f"Displaying predictions for Model v{version}:")
         
-        # Plot test data metrics for all models
         plot_test_metrics(models, X_test, Y_test, labels_map)
 
-        # Display predictions for all models
         display_predictions(models, X_test, Y_test, labels_map, n_samples=5)
 
     elif model_version in models:
@@ -251,10 +248,8 @@ if __name__ == "__main__":
         model.load_state_dict(torch.load(f"simple_cnn_v{model_version}.pth"))
         print(f"Displaying predictions for Model v{model_version}:")
         
-        # Plot test data metrics for the selected model
         plot_test_metrics({model_version: model}, X_test, Y_test, labels_map)
 
-        # Display predictions for the selected model
         display_predictions({model_version: model}, X_test, Y_test, labels_map, n_samples=5)
 
     plot_history(history_files)
