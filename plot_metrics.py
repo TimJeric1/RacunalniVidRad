@@ -3,35 +3,70 @@ import json
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from model import SimpleCNN_v1, SimpleCNN_v2, SimpleCNN_v3
 import random
+
+
+def evaluate_on_test_data(model, X_test, Y_test, labels_map):
+    """
+    Evaluate the model on the test data and return metrics.
+    """
+    model.eval()
+    y_true, y_pred = [], []
+
+    with torch.no_grad():
+        for idx in range(len(X_test)):
+            output = model(X_test[idx].unsqueeze(0).cuda())
+            predicted_label = torch.argmax(output).item()
+            y_pred.append(predicted_label)
+            y_true.append(Y_test[idx].item())
+
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred, average='weighted', zero_division=0)
+    recall = recall_score(y_true, y_pred, average='weighted', zero_division=0)
+    f1 = f1_score(y_true, y_pred, average='weighted')
+
+    return accuracy, precision, recall, f1
+
+
+def plot_test_metrics(models, X_test, Y_test, labels_map):
+    """
+    Plot bar graphs for test metrics (Accuracy, Precision, Recall, F1 Score) for each model.
+    """
+    accuracies = []
+    precisions = []
+    recalls = []
+    f1_scores = []
+
+    for model in models.values():
+        accuracy, precision, recall, f1 = evaluate_on_test_data(model, X_test, Y_test, labels_map)
+        accuracies.append(accuracy)
+        precisions.append(precision)
+        recalls.append(recall)
+        f1_scores.append(f1)
+
+    # Plot the metrics
+    metrics = ['Accuracy', 'Precision', 'Recall', 'F1 Score']
+    values = [accuracies, precisions, recalls, f1_scores]
+    colors = ['b', 'g', 'r']
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+    for i, metric in enumerate(metrics):
+        axes[i // 2, i % 2].bar(models.keys(), values[i], color=colors[:len(models)])
+        axes[i // 2, i % 2].set_title(f"{metric} of Test Data")
+        axes[i // 2, i % 2].set_ylabel(metric)
+        axes[i // 2, i % 2].set_xlabel("Model Version")
+        axes[i // 2, i % 2].set_ylim(0, 1)
+
+    plt.tight_layout()
+    plt.show()
+
+
 def plot_history(history_files):
     """
     Plots the training and validation metrics for one or more models.
-
-    Parameters:
-    history_files (list of str): List of file paths to JSON files containing the training
-                                 and validation metrics for each model. Each JSON file is 
-                                 expected to include:
-                                 - "train_loss"
-                                 - "val_loss"
-                                 - "train_accuracy"
-                                 - "val_accuracy"
-                                 - "train_precision"
-                                 - "val_precision"
-                                 - "train_recall"
-                                 - "val_recall"
-                                 - "train_f1"
-                                 - "val_f1"
-
-    This function generates plots for the following metrics:
-    - Loss
-    - Accuracy
-    - Precision
-    - F1 Score
-
-    Metrics are plotted for both training and validation data.
-    Separate figures are created for training and validation metrics.
     """
     colors = ['b', 'g', 'r', 'c', 'm', 'y']
 
@@ -111,37 +146,54 @@ def plot_history(history_files):
     plt.show()
 
 
-
-def display_predictions(model, X_validation, Y_validation, labels_map, n_samples=5):
+def display_predictions(models, X_test, Y_test, labels_map, n_samples=5):
     """
-    Displays n_samples randomly selected images from the validation set 
+    Displays n_samples randomly selected images from the test set 
     with their true and predicted labels.
-
-    Parameters:
-    model (nn.Module): Trained PyTorch model.
-    X_validation (torch.Tensor): Validation images.
-    Y_validation (torch.Tensor): True labels for validation images.
-    labels_map (dict): Mapping of label indices to class names.
-    n_samples (int): Number of samples to display.
+    The same images are predicted by all models, and the model name is displayed in the figure title.
+    Correct predictions are color-coded in green, and incorrect predictions in red.
     """
-    model.eval()
-    indices = random.sample(range(len(X_validation)), n_samples)  # Randomly select n_samples indices
-    fig, axes = plt.subplots(1, n_samples, figsize=(15, 5))
+    model_names = list(models.keys())
+    indices = random.sample(range(len(X_test)), n_samples)  # Randomly select n_samples indices
+
+    # Create a figure with enough space for all models' predictions
+    fig, axes = plt.subplots(n_samples, len(models), figsize=(18, 5 * n_samples))
 
     for i, idx in enumerate(indices):
-        img = X_validation[idx].permute(1, 2, 0).numpy()
-        true_label = labels_map[Y_validation[idx].item()]
+        img = X_test[idx].permute(1, 2, 0).numpy()
+        true_label = labels_map[Y_test[idx].item()]
 
-        with torch.no_grad():
-            output = model(X_validation[idx].unsqueeze(0).cuda())
-            predicted_label = labels_map[torch.argmax(output).item()]
+        for j, (model_name, model) in enumerate(models.items()):
+            with torch.no_grad():
+                output = model(X_test[idx].unsqueeze(0).cuda())
+                predicted_label = labels_map[torch.argmax(output).item()]
 
-        axes[i].imshow(img)
-        axes[i].set_title(f"True: {true_label}\nPred: {predicted_label}")
-        axes[i].axis('off')
+            # Color the text based on prediction correctness
+            if predicted_label == true_label:
+                text_color = 'green'
+            else:
+                text_color = 'red'
 
-    plt.tight_layout()
+            # Display the image in the corresponding subplot
+            axes[i, j].imshow(img)
+            axes[i, j].axis('off')
+            
+            # Add text to the right of the image
+            axes[i, j].text(1.1, 0.5, f"True: {true_label}\nPred: {predicted_label}",
+                            transform=axes[i, j].transAxes, fontsize=12, color=text_color, verticalalignment='center')
+
+    # Set the figure title with all model names
+    fig.suptitle(f"Predictions on Same 5 Test Images for Models {', '.join(model_names)}", fontsize=16)
+
+    # Add column titles (model names) with more space
+    for j, model_name in enumerate(model_names):
+        axes[0, j].set_title(f"Model {model_name}", fontsize=12, color='black')
+
+    # Adjust layout to prevent overlap and add more space between subplots
+    plt.subplots_adjust(wspace=0.6, hspace=0.6)  # Increased spacing
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout within the figure
     plt.show()
+
 
 
 if __name__ == "__main__":
@@ -156,11 +208,13 @@ if __name__ == "__main__":
     if model_version not in ["0", "1", "2", "3"]:
         sys.exit()
 
-    # Load validation data
-    file_path = "input_data.npz"
+    # Load validation and test data
+    file_path = "updated_data.npz"
     data = np.load(file_path)
     X_validation = torch.tensor(data['X_validation'], dtype=torch.float32).permute(0, 3, 1, 2)
     Y_validation = torch.tensor(data['Y_validation'], dtype=torch.long)
+    X_test = torch.tensor(data['X_test'], dtype=torch.float32).permute(0, 3, 1, 2)
+    Y_test = torch.tensor(data['Y_test'], dtype=torch.long)
     labels_map = {0: "Ship", 1: "Iceberg"}
 
     models = {
@@ -178,13 +232,23 @@ if __name__ == "__main__":
         for version, model in models.items():
             model.load_state_dict(torch.load(f"simple_cnn_v{version}.pth"))
             print(f"Displaying predictions for Model v{version}:")
-            display_predictions(model, X_validation, Y_validation, labels_map, n_samples=5)
+        
+        # Plot test data metrics for all models
+        plot_test_metrics(models, X_test, Y_test, labels_map)
+
+        # Display predictions for all models
+        display_predictions(models, X_test, Y_test, labels_map, n_samples=5)
 
     elif model_version in models:
         history_files = [f"training_history_model_v{model_version}.json"]
         model = models[model_version]
         model.load_state_dict(torch.load(f"simple_cnn_v{model_version}.pth"))
         print(f"Displaying predictions for Model v{model_version}:")
-        display_predictions(model, X_validation, Y_validation, labels_map, n_samples=5)
+        
+        # Plot test data metrics for the selected model
+        plot_test_metrics({model_version: model}, X_test, Y_test, labels_map)
+
+        # Display predictions for the selected model
+        display_predictions({model_version: model}, X_test, Y_test, labels_map, n_samples=5)
 
     plot_history(history_files)

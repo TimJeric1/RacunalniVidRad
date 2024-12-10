@@ -122,7 +122,7 @@ if __name__ == "__main__":
     if model_version not in ["0", "1", "2", "3"]:
         sys.exit()
 
-    file_path = "/home/timjeric/Downloads/racvid/RacunalniVid_Rad/input_data.npz"
+    file_path = "updated_data.npz"
     data = np.load(file_path)
     X_train_tensor = torch.tensor(data['X_train'], dtype=torch.float32).permute(0, 3, 1, 2)
     Y_train_tensor = torch.tensor(data['Y_train'], dtype=torch.long)
