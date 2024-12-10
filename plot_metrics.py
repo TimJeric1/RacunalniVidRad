@@ -159,6 +159,10 @@ def display_predictions(models, X_test, Y_test, labels_map, n_samples=5):
     # Create a figure with enough space for all models' predictions
     fig, axes = plt.subplots(n_samples, len(models), figsize=(18, 5 * n_samples))
 
+    # If there is only one model, axes will be 1D. We need to convert it into 2D.
+    if len(models) == 1:
+        axes = np.expand_dims(axes, axis=1)  # Convert to 2D if only one model
+
     for i, idx in enumerate(indices):
         img = X_test[idx].permute(1, 2, 0).numpy()
         true_label = labels_map[Y_test[idx].item()]
@@ -183,7 +187,7 @@ def display_predictions(models, X_test, Y_test, labels_map, n_samples=5):
                             transform=axes[i, j].transAxes, fontsize=12, color=text_color, verticalalignment='center')
 
     # Set the figure title with all model names
-    fig.suptitle(f"Predictions on Same 5 Test Images for Models {', '.join(model_names)}", fontsize=16)
+    fig.suptitle(f"Predictions on Same {n_samples} Test Images for Models {', '.join(model_names)}", fontsize=16)
 
     # Add column titles (model names) with more space
     for j, model_name in enumerate(model_names):
@@ -193,7 +197,6 @@ def display_predictions(models, X_test, Y_test, labels_map, n_samples=5):
     plt.subplots_adjust(wspace=0.6, hspace=0.6)  # Increased spacing
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust layout within the figure
     plt.show()
-
 
 
 if __name__ == "__main__":
