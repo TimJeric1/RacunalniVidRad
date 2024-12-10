@@ -8,6 +8,6 @@ pokreni ovim redoslijedom:
 ```python
 load_and_analyze_data.py
 model.py
-plot_metrics.py
 train.py
+plot_metrics.py
 ```
