@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch
+from torchvision import models
 
 class SimpleCNN_v1(nn.Module):
     """
@@ -173,8 +174,58 @@ class SimpleCNN_v4(nn.Module):
         return x
 
 
+class ResNet(nn.Module):
+    """
+    ResNet-18 model for binary classification.
+
+    Layers:
+    - ResNet-18 backbone with pretrained weights.
+    - Fully Connected Layer: Modified to output 2 neurons for binary classification.
+
+    Input Shape: (batch, 3, 75, 75)
+    Output Shape: (batch, 2)
+    """
+    def __init__(self):
+        super(ResNet, self).__init__()
+        self.resnet = models.resnet18(pretrained=True)  
+        num_features = self.resnet.fc.in_features  
+        self.resnet.fc = nn.Linear(num_features, 2)  
+
+    def forward(self, x):
+        return self.resnet(x)
+    
+
+class EfficientNet(nn.Module):
+    """
+    EfficientNet-B0 model for binary classification.
+
+    Layers:
+    - EfficientNet-B0 backbone with pretrained weights.
+    - Fully Connected Layer: Modified to output 2 neurons for binary classification.
+
+    Input Shape: (batch, 3, 224, 224)
+    Output Shape: (batch, 2)
+    """
+    def __init__(self):
+        super(EfficientNet, self).__init__()
+        self.efficientnet = models.efficientnet_b0(pretrained=True)  
+        num_features = self.efficientnet.classifier[1].in_features  
+        self.efficientnet.classifier = nn.Sequential(
+            nn.Dropout(0.2),
+            nn.Linear(num_features, 2)
+        )
+
+    def forward(self, x):
+        return self.efficientnet(x)
+
 if __name__ == "__main__":
     model_v1 = SimpleCNN_v1()
     model_v2 = SimpleCNN_v2()
     model_v3 = SimpleCNN_v3()
     model_v4 = SimpleCNN_v4()
+    res_net_model = ResNet()
+    efficient_net_model = EfficientNet()
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    res_net_model = res_net_model.to(device)
+    efficient_net_model = res_net_model.to(device)

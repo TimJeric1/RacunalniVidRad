@@ -6,22 +6,12 @@ from torch.optim import Adam
 from torch.nn import CrossEntropyLoss
 from sklearn.metrics import precision_score, recall_score, f1_score
 import numpy as np
-from model import SimpleCNN_v1, SimpleCNN_v2, SimpleCNN_v3, SimpleCNN_v4  # Import the new model v4
+from model import SimpleCNN_v1, SimpleCNN_v2, SimpleCNN_v3, SimpleCNN_v4, ResNet, EfficientNet  # Import EfficientNet-B0 model
+
 
 def train_and_validate(train_loader, val_loader, model, criterion, optimizer, patience=5):
     """
     Train and validate the model with early stopping based on validation loss.
-
-    Parameters:
-    train_loader (DataLoader): DataLoader for training data.
-    val_loader (DataLoader): DataLoader for validation data.
-    model (nn.Module): PyTorch model to be trained.
-    criterion (nn.Module): Loss function.
-    optimizer (torch.optim.Optimizer): Optimizer.
-    patience (int): Number of epochs with no improvement in validation loss to trigger early stopping.
-
-    Returns:
-    dict: Training and validation metrics history including loss, accuracy, precision, recall, and F1 score.
     """
     history = {
         "train_loss": [], "val_loss": [],
@@ -110,6 +100,7 @@ def train_and_validate(train_loader, val_loader, model, criterion, optimizer, pa
 
     return history
 
+
 if __name__ == "__main__":
     model_version = input("""
     Which model do you want to train?
@@ -117,10 +108,12 @@ if __name__ == "__main__":
     v1:  1
     v2:  2
     v3:  3
-    v4:  4  # Add v4 as an option
+    v4:  4
+    v5:  5  # ResNet-based model
+    v6:  6  # EfficientNet-B0 model
     """)
 
-    if model_version not in ["0", "1", "2", "3", "4"]:
+    if model_version not in ["0", "1", "2", "3", "4", "5", "6"]:
         sys.exit()
 
     file_path = "updated_data.npz"
@@ -139,7 +132,9 @@ if __name__ == "__main__":
         '1': SimpleCNN_v1().cuda(),
         '2': SimpleCNN_v2().cuda(),
         '3': SimpleCNN_v3().cuda(),
-        '4': SimpleCNN_v4().cuda()  # Add v4 model
+        '4': SimpleCNN_v4().cuda(),
+        '5': ResNet().cuda(),
+        '6': EfficientNet().cuda()
     }
 
     if model_version == '0':
